@@ -12,6 +12,7 @@ from AI_Assistant_modules.actions.line_drawing_cutout import LineDrawingCutOut
 from AI_Assistant_modules.actions.normal_map import NormalMap
 from AI_Assistant_modules.actions.resize import ImageResize
 from AI_Assistant_modules.actions.stick2body import Stick2Body
+from AI_Assistant_modules.actions.setting import Setting
 
 # class base_gui:
 #  def layout(self, lang_util, transfer_target=None):
@@ -69,6 +70,9 @@ def gradio_tab_gui(app_config):
                 coloring.layout()        
             with gr.TabItem(lang_util.get_text("resize")):
                 ImageResize(app_config).layout()
+            with gr.TabItem(lang_util.get_text("setting")):
+                setting = Setting(app_config)
+                setting.layout()    
             if app_config.device == "cloud" or app_config.device == "docker":
                 with gr.TabItem(lang_util.get_text("output_destination")) as output_tab_item:
                     gallery = gr.Gallery([], label=lang_util.get_text("output_destination"), interactive=False,
