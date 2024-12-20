@@ -10,8 +10,6 @@
 - プロンプト実行後に先頭または末尾に任意のタグ追加機能
 - プロンプト実行後に任意のタグを置換/削除機能
 - モデル選択機能
-- 
+
 ## 起動方法
-`AI_Assistant_model_DL.cmd`を実行し、
-ビルド設定を行った上で、`python AI_Assistant.py`を実行してください。
-```
+`AI_Assistant_model_DL.cmd`を実行しビルド設定を行った上で、`python AI_Assistant.py`を実行してください。
