@@ -1,6 +1,7 @@
 [日本語](README.md)
 # AI-Assistant-fork
-[tori29umai](https://github.com/tori29umai0123)氏の[AI-Assistant](https://github.com/tori29umai0123/AI-Assistant)に機能追加を行ったものとなります。
+[tori29umai](https://github.com/tori29umai0123)氏の[AI-Assistant](https://github.com/tori29umai0123/AI-Assistant)に
+機能追加を行ったものとなります。
 
 ## 追加機能
 - 出力先フォルダの設定機能
@@ -12,4 +13,5 @@
 - モデル選択機能
 
 ## 起動方法
-`AI_Assistant_model_DL.cmd`を実行しビルド設定を行った上で、`python AI_Assistant.py`を実行してください。
+`AI_Assistant_model_DL.cmd`を実行しビルド設定を行った上で、
+`python AI_Assistant.py`を実行してください。
