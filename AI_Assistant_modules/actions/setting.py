@@ -15,6 +15,7 @@ class Setting:
         self.app_config = app_config
         self.input_image = None
         self.output = None
+        self.default_negative_prompt = ""
         self.config_file = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 
             "setting.ini"
@@ -28,66 +29,77 @@ class Setting:
             config.read(self.config_file, encoding='utf-8')
             if config.has_option('DEFAULT', 'output_dir'):
                 self.app_config.output_dir = config.get('DEFAULT', 'output_dir')
+            if config.has_option('DEFAULT', 'negative_prompt'):
+                self.app_config.negative_prompt = config.get('DEFAULT', 'negative_prompt')
+            else:
+                self.app_config.negative_prompt = self.default_negative_prompt
+            if config.has_option('DEFAULT', 'replace_prompt'):
+                self.app_config.replace_prompt = config.get('DEFAULT', 'replace_prompt')
+            else:
+                self.app_config.replace_prompt = ""
 
-    def save_config(self, output_dir):
-        """出力ディレクトリの設定を保存する"""
+    def save_config(self, output_dir, prompt_add, negative_prompt, replace_prompt):
+        """設定を保存する"""
         try:
-            # パスの正規化
-            normalized_path = os.path.normpath(output_dir)
+            normalized_path = self._validate_config(output_dir, prompt_add, negative_prompt, replace_prompt)
             
-            # 絶対パスに変換
-            if not os.path.isabs(normalized_path):
-                normalized_path = os.path.abspath(os.path.join(self.app_config.dpath, normalized_path))
-
-            # 設定ファイルの処理
             config = configparser.ConfigParser()
             if os.path.exists(self.config_file):
                 config.read(self.config_file, encoding='utf-8')
-
             if 'DEFAULT' not in config:
                 config['DEFAULT'] = {}
+            
             config['DEFAULT']['output_dir'] = normalized_path
-
-            # 設定の保存
+            config['DEFAULT']['prompt_add'] = prompt_add
+            config['DEFAULT']['negative_prompt'] = negative_prompt
+            config['DEFAULT']['replace_prompt'] = replace_prompt
+            
             os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 config.write(f)
-
-            # 出力ディレクトリの作成
+            
             if not os.path.exists(normalized_path):
                 os.makedirs(normalized_path)
             
-            # アプリケーション設定の更新
             self.app_config.output_dir = normalized_path
-            return "設定を保存しました"
-
+            self.app_config.negative_prompt = negative_prompt
+            self.app_config.replace_prompt = replace_prompt
+            return self.app_config.lang_util.get_text("result_word_ok")
         except PermissionError:
-            return "ディレクトリへのアクセス権限がありません"
+            return self.app_config.lang_util.get_text("permission_error")
         except Exception as e:
-            return f"エラーが発生しました: {str(e)}"
+            return self.app_config.lang_util.get_text("general_error").format(str(e))
+
+    def _validate_config(self, output_dir, prompt_add, negative_prompt, replace_prompt):
+        if not output_dir:
+            raise ValueError(self.app_config.lang_util.get_text("error_output_dir_required"))
+        if not os.path.isabs(output_dir):
+            try:
+                return os.path.abspath(os.path.join(self.app_config.dpath, output_dir))
+            except:
+                raise ValueError(self.app_config.lang_util.get_text("error_invalid_path"))
+        return output_dir
 
     def layout(self):
         """設定画面のレイアウトを構築する"""
         lang_util = self.app_config.lang_util
         
-        # setting.iniから出力先を取得
         config = configparser.ConfigParser()
         output_dir_value = ""
+        negative_prompt_value = self.default_negative_prompt
+        prompt_add_value = ""
+        replace_prompt_value = ""
+        
         if os.path.exists(self.config_file):
             config.read(self.config_file, encoding='utf-8')
             if config.has_option('DEFAULT', 'output_dir'):
                 output_dir_value = config.get('DEFAULT', 'output_dir')
-        
-        # 設定が空の場合はプロジェクトルート直下のoutputを設定
-        if not output_dir_value:
-            output_dir_value = os.path.join(self.app_config.dpath, "output")
-            # 設定を保存
-            config['DEFAULT'] = {'output_dir': output_dir_value}
-            os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
-            with open(self.config_file, 'w', encoding='utf-8') as f:
-                config.write(f)
-        
-        self.app_config.output_dir = output_dir_value
+            if config.has_option('DEFAULT', 'negative_prompt'):
+                negative_prompt_value = config.get('DEFAULT', 'negative_prompt')
+            if config.has_option('DEFAULT', 'prompt_add'):
+                prompt_add_value = config.get('DEFAULT', 'prompt_add')
+            if config.has_option('DEFAULT', 'replace_prompt'):
+                replace_prompt_value = config.get('DEFAULT', 'replace_prompt')
         
         with gr.Row() as self.block:
             with gr.Column():
@@ -96,6 +108,21 @@ class Setting:
                     value=output_dir_value,
                     lines=1
                 )
+                prompt_add = gr.Textbox(
+                    label=lang_util.get_text("prompt_add"),
+                    value=prompt_add_value,
+                    lines=3
+                )
+                negative_prompt = gr.Textbox(
+                    label=lang_util.get_text("negative_prompt_set"),
+                    value=negative_prompt_value,
+                    lines=3
+                )
+                replace_prompt = gr.Textbox(
+                    label=lang_util.get_text("replace_prompt"),
+                    value=replace_prompt_value,
+                    lines=3
+                )
                 save_btn = gr.Button(lang_util.get_text("save"))
                 self.output = gr.Textbox(
                     label=lang_util.get_text("result"),
@@ -103,6 +130,7 @@ class Setting:
                 )
                 save_btn.click(
                     fn=self.save_config,
-                    inputs=[output_dir],
+                    inputs=[output_dir, prompt_add, negative_prompt, replace_prompt],
                     outputs=[self.output]
                 )
+        return self.block
